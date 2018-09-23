@@ -42,7 +42,7 @@ def run_game(agents, payoffs, rounds):
 #
 def run_game_network(agents, payoffs, rounds, adj_matrix):
     for round in list(range(rounds)):
-        for i in range(len(agents)):
+        for i in range(len(agents)): #
             prob_sum = 0
             for opponent_index, item in enumerate(adj_matrix[i]):
                 prob_sum = item + prob_sum
