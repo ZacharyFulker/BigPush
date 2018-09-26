@@ -5,12 +5,12 @@ import numpy as np
 
 # create class for agents
 class Player:
-    def __init__(self, cooperate, defect, matrix_size): # !!!! add personal adj_matrix
+    def __init__(self, cooperate, defect, num_players):
         self.cooperate = cooperate
         self.defect = defect
         self.win_total = 0
-        self.adj_matrix = np.ones((self.matrix_size, self.matrix_size), dtype=float) # !!! what is self usage here
-        np.fill_diagonal(self.adj_matrix, 0)
+        self.adj_matrix = np.ones((1, num_players), dtype=float)
+        self.adj_matrix[0][0] = 0
 
     def choose_strategy(self):
         defect_ratio = self.defect / (self.cooperate + self.defect)
@@ -20,13 +20,56 @@ class Player:
             defect = False
         return defect
 
-    def update(self, defect, round_winnings): # !!!!! update personal adj_matrix
+    def update(self, defect, round_winnings, index):
         if defect:
-            self.defect = self.defect + round_winnings
+            self.defect += round_winnings
         else:
-            self.cooperate = self.cooperate + round_winnings
-        self.win_total = self.win_total + round_winnings
+            self.cooperate += round_winnings
+        self.win_total += round_winnings
+        self.adj_matrix[0][index] += round_winnings
 
+    def get_adj_matrix(self):
+        return self.adj_matrix
+
+
+def run_game_network(payoffs, rounds, num_players):
+    # initialize agents
+    agents = []
+    for player in range(num_players):
+        agents.append(Player(1, 1, num_players))
+    # begin game
+    for iteration in range(rounds):
+        # each agent chooses an opponent in each round
+        for index in range(len(agents)):
+            adj_matrix = agents[index].get_adj_matrix()
+            random_num = random.uniform(0, sum(adj_matrix)[0])
+            for opponent_index, item in enumerate(accumulate(adj_matrix)[0]):
+                if random_num <= item:
+                    break
+            # agents pick strategy and then update based on game results
+            opponent_defect = agents[opponent_index].choose_strategy()
+            agent_defect = agents[index].choose_strategy()
+            agent_winnings = payoffs[agent_defect][opponent_defect]
+            opponent_winnings = payoffs[opponent_defect][agent_defect]
+            agents[index].update(agent_defect, agent_winnings, opponent_index)
+            agents[opponent_index].update(opponent_defect, opponent_winnings, index)
+    return agents
+
+
+# Game Setup and execution
+payoff = [[1, 0], [(2/3), (1/3)]]
+results = run_game_network(payoff, 5, 10)
+#for i in list(range(len(agents))):
+    #print('Player: ', i)
+    #print(results[i].win_total)
+    #print(results[i].defect)
+    #print(results[i].cooperate)
+
+#try to get sense of how system is evolving, Change payoffs see what happens
+#statistic that shows proportion of how likely  to cooperate over time and plot it
+
+
+# Junk
 # each agent selects randomly (with equal likelyhood) one other agent to play for their turn in the round), total games in each round is number of agents
 def run_game(agents, payoffs, rounds):
     for round in list(range(rounds)):
@@ -41,44 +84,11 @@ def run_game(agents, payoffs, rounds):
             agent.update(agent_defect, agent_winnings)
             opponent.update(opponent_defect, opponent_winnings)
     return agents
-
-#
-def run_game_network(agents, payoffs, rounds):  # !!!!! auto create agent objects
-    # begin game
-    for round in list(range(rounds)):
-        # each agent chooses an opponent in each round
-        random_num = random.uniform(0, sum(adj_matrix[i]))
-        for i in range(len(agents)):
-            for opponent_index, item in enumerate(accumulate(adj_matrix[i])):
-                if random_num <= item:
-                    break
-            # agents pick strategy and then update based on game results
-            opponent_defect = agents[opponent_index].choose_strategy()
-            agent_defect = agents[i].choose_strategy()
-            agent_winnings = payoffs[agent_defect][opponent_defect]
-            opponent_winnings = payoffs[opponent_defect][agent_defect]
-            agents[i].update(agent_defect, agent_winnings)
-            agents[opponent_index].update(opponent_defect, opponent_winnings)
-    return agents
-
-
-# Game Setup and execution
-payoffs = [[1, 0], [(2/3), (1/3)]]
 #adj_matrix = [[0,.5,0,.5,0,0], [.5,0,.5,0,0,0], [0,.5,0,0,0,.5], [.5,0,0,0,.5,0], [0,0,0,.5,0,.5], [0,0,.5,0,.5,0]] #look for multinomial choice option
-p1 = Player(1, 1,1)
-p2 = Player(1, 1)
-p3 = Player(1, 1)
-p4 = Player(1, 1)
-p5 = Player(1, 1)
-p6 = Player(1, 1)
-agents = [p1, p2, p3, p4, p5, p6]
-results = run_game_network(agents, payoffs, 5, adj_matrix)
-for i in list(range(len(agents))):
-    print('Player: ', i)
-    print(results[i].win_total)
-    print(results[i].defect)
-    print(results[i].cooperate)
-
-#reinforce link weights in same way (so strategy and links coevolve)
-#try to get sense of how system is evolving, Change payoffs see what happens
-#statistic that shows proportion of how likely  to cooperate over time and plot it
+#p1 = Player(1, 1, 10)
+#p2 = Player(1, 1)
+#p3 = Player(1, 1)
+#p4 = Player(1, 1)
+#p5 = Player(1, 1)
+#p6 = Player(1, 1)
+#agents = [p1, p2, p3, p4, p5, p6]
