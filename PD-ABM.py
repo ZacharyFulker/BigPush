@@ -69,7 +69,7 @@ results = run_game_network(payoff, 5, 10)
 #statistic that shows proportion of how likely  to cooperate over time and plot it
 
 
-# Junk
+# junk
 # each agent selects randomly (with equal likelyhood) one other agent to play for their turn in the round), total games in each round is number of agents
 def run_game(agents, payoffs, rounds):
     for round in list(range(rounds)):
